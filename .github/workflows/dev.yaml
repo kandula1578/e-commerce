@@ -46,7 +46,7 @@ jobs:
           else
             echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           fi
-          echo "Using image tag: ${{ steps.set_image_tag.outputs.IMAGE_TAG }}"
+            echo "Using image tag: ${{ steps.set_image_tag.outputs.IMAGE_TAG }}"
 
       - name: Build Docker Compose services
         run: |
