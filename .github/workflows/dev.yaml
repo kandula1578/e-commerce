@@ -8,6 +8,8 @@ env:
   AWS_REGION: us-east-1
   IMAGE_TAG: master
   EKS_CLUSTER_NAME: capstone
+  ECR_REGISTRY: 931003996958.dkr.ecr.eu-central-1.amazonaws.com
+
   DOCKERHUB_REPOSITORY_NAME : kandula17/e-commerce
 
 jobs:
@@ -34,11 +36,37 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1  # Replace with your region          
 
-      - name: Log in to DockerHub
-        run: sudo echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Log in to ECR
+        run:  aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
  
-      - name: Build Docker image
-        run: sudo docker compose -f docker-compose.yml build --parallel
+      - name: Determine image tag
+        id: set_image_tag
+        run: |
+            echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Using image tag: ${{ steps.set_image_tag.outputs.IMAGE_TAG }}"
+
+      - name: Build Docker Compose services
+        run: |
+          echo "Building Docker Compose services with tag: $APP_IMAGE_TAG"
+          docker compose build --parallel
+        env:
+          APP_IMAGE_TAG: ${{ steps.set_image_tag.outputs.IMAGE_TAG }} # Pass the determined tag as an env var
+
+      - name: Push Docker Compose service images to Docker Hub.
+        run: |
+          echo "Pushing Docker Compose services to Docker Hub..."
+          docker compose push
+        env:
+          APP_IMAGE_TAG: ${{ steps.set_image_tag.outputs.IMAGE_TAG }} # Ensure the same tag is used for pushing
+
+      - name: Verify pushed images (optional)
+        run: docker images
+
+#      - name: Build Docker image
+#        run: sudo docker compose  build --parallel
 
 
  

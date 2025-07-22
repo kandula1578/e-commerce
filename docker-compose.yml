@@ -2,6 +2,7 @@ version: '3'
 services:
   backend:
     build: ./backend
+    images: 931003996958.dkr.ecr.us-east-1.amazonaws.com/e-commerce-api:${APP_IMAGE_TAG:-latest
     ports:
       - "5000:5000"
     volumes:
@@ -9,6 +10,7 @@ services:
 
   frontend:
     build: ./frontend
+    images: 931003996958.dkr.ecr.us-east-1.amazonaws.com/e-commerce-app:${APP_IMAGE_TAG:-latest
     ports:
       - "80:80"
     depends_on:
