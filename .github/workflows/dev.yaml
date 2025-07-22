@@ -51,6 +51,14 @@ jobs:
       #     username: ${{ secrets.DOCKERHUB_USERNAME }} # Your Docker Hub username secret
       #     password: ${{ secrets.DOCKERHUB_TOKEN }} # Your Docker Hub access token secret
 
+      - name: Create .env file for Docker Compose
+        run: |
+          echo "ECR_REGISTRY=${{ env.ECR_REGISTRY }}" > .env
+          echo "APP_IMAGE_TAG=${{ env.APP_IMAGE_TAG }}" >> .env
+          echo "DOCKERHUB_REPOSITORY_NAME=${{ env.DOCKERHUB_REPOSITORY_NAME }}" >> .env
+          echo "Generated .env file:"
+          cat .env # For debugging purposes, will print content to logs
+
       - name: Build Docker Compose services # Builds your Docker images using docker compose
         run: |
           echo "Building Docker Compose services with tag: ${{ env.APP_IMAGE_TAG }}"
