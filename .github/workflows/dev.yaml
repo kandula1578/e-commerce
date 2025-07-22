@@ -38,7 +38,9 @@ jobs:
         run: sudo echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
  
       - name: Build Docker image
-        run: sudo docker build -t kandula17/e-commerce:${{ env.IMAGE_TAG }} .
+        run: sudo docker compose -f docker-compose.yml build --parallel
+
+
  
-      - name: Push Docker image
-        run: sudo docker push kandula17/e-commerce:${{ env.IMAGE_TAG }}
+#      - name: Push Docker image
+#        run: sudo docker push kandula17/e-commerce:${{ env.IMAGE_TAG }}
