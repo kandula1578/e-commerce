@@ -39,28 +39,39 @@ jobs:
       - name: Log in to ECR
         run:  aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
  
-      - name: Determine image tag
-        id: set_image_tag
+      - name: Set image tag for branch/tag
+        id: set_image_tag_branch
+        if: github.ref_type == 'branch' || github.ref_type == 'tag' # Or more specific conditions
         run: |
-            echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          else
-            echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
-            echo "Using image tag: ${{ steps.set_image_tag.outputs.IMAGE_TAG }}"
+          echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+        # The output from this step will only be set if this step runs
+
+      - name: Set image tag for other events (e.g., pull_request, push to non-branch/tag)
+        id: set_image_tag_sha
+        # This step runs if the previous one didn't set the tag, or for specific event types
+        if: success() && !steps.set_image_tag_branch.outputs.IMAGE_TAG # Runs if the branch/tag step didn't set the tag
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Use image tag
+        run: |
+          # Use a coalesce-like approach to get the tag, preferring the branch tag if set
+          IMAGE_TAG="${{ steps.set_image_tag_branch.outputs.IMAGE_TAG || steps.set_image_tag_sha.outputs.IMAGE_TAG }}"
+          echo "Using image tag: $IMAGE_TAG"
 
       - name: Build Docker Compose services
         run: |
           echo "Building Docker Compose services with tag: $APP_IMAGE_TAG"
           docker compose build --parallel
         env:
-          APP_IMAGE_TAG: ${{ steps.set_image_tag.outputs.IMAGE_TAG }} # Pass the determined tag as an env var
+          APP_IMAGE_TAG: "${{ steps.set_image_tag_branch.outputs.IMAGE_TAG || steps.set_image_tag_sha.outputs.IMAGE_TAG }}"  # Pass the determined tag as an env var
 
       - name: Push Docker Compose service images to Docker Hub.
         run: |
           echo "Pushing Docker Compose services to Docker Hub..."
           docker compose push
         env:
-          APP_IMAGE_TAG: ${{ steps.set_image_tag.outputs.IMAGE_TAG }} # Ensure the same tag is used for pushing
+          APP_IMAGE_TAG: "${{ steps.set_image_tag_branch.outputs.IMAGE_TAG || steps.set_image_tag_sha.outputs.IMAGE_TAG }}" # Ensure the same tag is used for pushing
 
       - name: Verify pushed images (optional)
         run: docker images
