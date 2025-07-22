@@ -51,7 +51,7 @@ jobs:
       #     username: ${{ secrets.DOCKERHUB_USERNAME }} # Your Docker Hub username secret
       #     password: ${{ secrets.DOCKERHUB_TOKEN }} # Your Docker Hub access token secret
 
-      - name: Create .env file for Docker Compose
+      - name: Create .env file for ECR
         run: |
           echo "ECR_REGISTRY=${{ env.ECR_REGISTRY }}" > .env
           echo "APP_IMAGE_TAG=${{ env.APP_IMAGE_TAG }}" >> .env
@@ -70,9 +70,9 @@ jobs:
           APP_IMAGE_TAG: ${{ env.APP_IMAGE_TAG }}
           DOCKERHUB_REPOSITORY_NAME: ${{ env.DOCKERHUB_REPOSITORY_NAME }}
 
-      - name: Push Docker Compose service images to Docker Hub. # Pushes built images to Docker Hub
+      - name: Push Docker Compose service images to ECR. # Pushes built images to ECR
         run: |
-          echo "Pushing Docker Compose services to Docker Hub..."
+          echo "Pushing Docker Compose services to ECR..."
           sudo docker-compose push
         env:
           ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
