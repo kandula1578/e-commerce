@@ -2,84 +2,77 @@ name: final-capstone
 
 on:
   push:
-    branches: [master]
+    branches: [master] # Trigger on pushes to the master branch
 
 env:
-  AWS_REGION: us-east-1
-  IMAGE_TAG: master
-  EKS_CLUSTER_NAME: capstone
-  ECR_REGISTRY: 931003996958.dkr.ecr.eu-central-1.amazonaws.com
-
-  DOCKERHUB_REPOSITORY_NAME : kandula17/e-commerce
+  AWS_REGION: us-east-1 # Define your AWS region
+  ECR_REGISTRY: 931003996958.dkr.ecr.us-east-1.amazonaws.com # Corrected ECR registry for us-east-1
+  EKS_CLUSTER_NAME: capstone # Name of your EKS cluster
+  DOCKERHUB_REPOSITORY_NAME: kandula17/e-commerce # Your Docker Hub repository name
 
 jobs:
   build:
-    runs-on: [self-hosted , aws]
+    runs-on: [self-hosted, aws] # Specify your self-hosted runner labels
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Checkout Source code
-        id: checkout
-        run: echo "test"
+      - name: Checkout Source code # This action checks out your repository code
+        uses: actions/checkout@v3
 
-  #    - name: set lower case repository name
-  #      id: lc-repository
-  #      run: |
-  #        echo "REPOSITORY_LC=${REPOSITORY,,}" >>${GITHUB_ENV}
-  #      env:
-  #        REPOSITORY: "${{ github.repository }}"
+      # This step determines the image tag based on the Git reference type
+      # and sets it as an environment variable (APP_IMAGE_TAG) for subsequent steps.
+      - name: Determine and set APP_IMAGE_TAG
+        id: set_app_image_tag
+        run: |
+          # If the ref type is a branch or tag, use the ref name as the tag.
+          if [[ "${{ github.ref_type }}" == "branch" || "${{ github.ref_type }}" == "tag" ]]; then
+            # Set APP_IMAGE_TAG as an environment variable for the job
+            echo "APP_IMAGE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+            echo "Using image tag from GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
+          else
+            # Otherwise, use the first 7 characters of the commit SHA as the tag.
+            echo "APP_IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+            echo "Using image tag from GITHUB_SHA: ${GITHUB_SHA::7}"
+          fi
+        # The APP_IMAGE_TAG is now available as ${{ env.APP_IMAGE_TAG }} in subsequent steps
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials # Configures AWS credentials for ECR login
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Replace with your region          
+          aws-region: ${{ env.AWS_REGION }} # Use the AWS_REGION from env block
 
-      - name: Log in to ECR
-        run:  aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
- 
-      - name: Set image tag for branch/tag
-        id: set_image_tag_branch
-        if: github.ref_type == 'branch' || github.ref_type == 'tag' # Or more specific conditions
-        run: |
-          echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-        # The output from this step will only be set if this step runs
+      - name: Log in to ECR # Logs into Amazon Elastic Container Registry
+        run: aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
 
-      - name: Set image tag for other events (e.g., pull_request, push to non-branch/tag)
-        id: set_image_tag_sha
-        # This step runs if the previous one didn't set the tag, or for specific event types
-        if: success() && !steps.set_image_tag_branch.outputs.IMAGE_TAG # Runs if the branch/tag step didn't set the tag
-        run: |
-          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Log in to Docker Hub # Logs into Docker Hub using secrets
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # Your Docker Hub username secret
+          password: ${{ secrets.DOCKERHUB_TOKEN }} # Your Docker Hub access token secret
 
-      - name: Use image tag
+      - name: Build Docker Compose services # Builds your Docker images using docker compose
         run: |
-          # Use a coalesce-like approach to get the tag, preferring the branch tag if set
-          IMAGE_TAG="${{ steps.set_image_tag_branch.outputs.IMAGE_TAG || steps.set_image_tag_sha.outputs.IMAGE_TAG }}"
-          echo "Using image tag: $IMAGE_TAG"
-
-      - name: Build Docker Compose services
-        run: |
-          echo "Building Docker Compose services with tag: $APP_IMAGE_TAG"
+          echo "Building Docker Compose services with tag: ${{ env.APP_IMAGE_TAG }}"
+          # Ensure your docker-compose.yml references the APP_IMAGE_TAG variable, e.g.:
+          # image: ${DOCKERHUB_REPOSITORY_NAME}/your-service-name:${APP_IMAGE_TAG}
           docker compose build --parallel
-        env:
-          APP_IMAGE_TAG: "${{ steps.set_image_tag_branch.outputs.IMAGE_TAG || steps.set_image_tag_sha.outputs.IMAGE_TAG }}"  # Pass the determined tag as an env var
 
-      - name: Push Docker Compose service images to Docker Hub.
+      - name: Push Docker Compose service images to Docker Hub. # Pushes built images to Docker Hub
         run: |
           echo "Pushing Docker Compose services to Docker Hub..."
           docker compose push
-        env:
-          APP_IMAGE_TAG: "${{ steps.set_image_tag_branch.outputs.IMAGE_TAG || steps.set_image_tag_sha.outputs.IMAGE_TAG }}" # Ensure the same tag is used for pushing
 
-      - name: Verify pushed images (optional)
+      - name: Verify pushed images (optional) # Lists local Docker images for verification
         run: docker images
 
-#      - name: Build Docker image
-#        run: sudo docker compose  build --parallel
+      # Uncomment and modify these steps if you need to deploy to EKS
+      # - name: Update Kubeconfig
+      #   run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
-
- 
-#      - name: Push Docker image
-#        run: sudo docker push kandula17/e-commerce:${{ env.IMAGE_TAG }}
+      # - name: Deploy to EKS
+      #   run: |
+      #     # Example: Update your Kubernetes deployment with the new image tag
+      #     # kubectl set image deployment/your-deployment your-container=${{ env.ECR_REGISTRY }}/your-image:${{ env.APP_IMAGE_TAG }}
+      #     # kubectl apply -f kubernetes/deployment.yaml
+      #     echo "Deployment logic goes here"
