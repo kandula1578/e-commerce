@@ -56,7 +56,7 @@ jobs:
           echo "Building Docker Compose services with tag: ${{ env.APP_IMAGE_TAG }}"
           # Ensure your docker-compose.yml references the APP_IMAGE_TAG variable, e.g.:
           # image: ${DOCKERHUB_REPOSITORY_NAME}/your-service-name:${APP_IMAGE_TAG}
-          docker compose build --parallel
+          docker compose build
 
       - name: Push Docker Compose service images to Docker Hub. # Pushes built images to Docker Hub
         run: |
