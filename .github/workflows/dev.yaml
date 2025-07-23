@@ -88,9 +88,8 @@ jobs:
 
       - name: Deploy to EKS
          run: |
-         # Example: Update your Kubernetes deployment with the new image tag
            kubectl set image k8s/app.yml your-container=${{ env.ECR_REGISTRY }}/e-commerce-app:${{ env.APP_IMAGE_TAG }}
            kubectl set image k8s/api.yml your-container=${{ env.ECR_REGISTRY }}/e-commerce-api:${{ env.APP_IMAGE_TAG }}
            kubectl apply -f k8s/app.yml
            kubectl apply -f k8s/api.yml
-          echo "Deployment logic goes here"
+           echo "Deployment logic goes here"
