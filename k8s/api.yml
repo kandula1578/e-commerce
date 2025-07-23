@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e-commerce-api
+  labels:
+    app: e-commerce-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e-commerce-api
+      ver: v1.0
+  template:
+    metadata:
+      labels:
+        app: e-commerce-api
+        ver: v1.0
+    spec:
+      containers:
+        - name: e-commerce-api
+          image: 931003996958.dkr.ecr.us-east-1.amazonaws.com/e-commerce-api:master
+          ports:
+            - containerPort: 5000
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: e-commerce-api-svc
+  name: e-commerce-api-svc
+spec:
+  ports:
+  - port: 5000
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    app: e-commerce-api
+    ver: v1.0
+  type: ClusterIP

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e-commerce-web
+  labels:
+    app: e-commerce-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e-commerce-web
+      ver: v1.0
+  template:
+    metadata:
+      labels:
+        app: e-commerce-web
+        ver: v1.0
+    spec:
+      containers:
+        - name: e-commerce-web
+          image: 931003996958.dkr.ecr.us-east-1.amazonaws.com/e-commerce-app:master
+          ports:
+            - containerPort: 80
+          env:
+          - name: SERVER
+            value: "http://e-commerce-api-svc:5000"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: e-commerce-web-svc
+  name: e-commerce-web-svc
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+   app: e-commerce-web
+   ver: v1.0
+  type: LoadBalancer

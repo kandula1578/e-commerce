@@ -7,7 +7,7 @@ on:
 env:
   AWS_REGION: us-east-1 # Define your AWS region
   ECR_REGISTRY: 931003996958.dkr.ecr.us-east-1.amazonaws.com # Corrected ECR registry for us-east-1
-  EKS_CLUSTER_NAME: capstone # Name of your EKS cluster
+  EKS_CLUSTER_NAME: sree # Name of your EKS cluster
   DOCKERHUB_REPOSITORY_NAME: kandula17/e-commerce # Your Docker Hub repository name
 
 jobs:
@@ -83,12 +83,14 @@ jobs:
         run: sudo docker images
 
       # Uncomment and modify these steps if you need to deploy to EKS
-      # - name: Update Kubeconfig
-      #   run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
-      # - name: Deploy to EKS
-      #   run: |
-      #     # Example: Update your Kubernetes deployment with the new image tag
-      #     # kubectl set image deployment/your-deployment your-container=${{ env.ECR_REGISTRY }}/your-image:${{ env.APP_IMAGE_TAG }}
-      #     # kubectl apply -f kubernetes/deployment.yaml
-      #     echo "Deployment logic goes here"
+      - name: Deploy to EKS
+         run: |
+         # Example: Update your Kubernetes deployment with the new image tag
+           kubectl set image k8s/app.yml your-container=${{ env.ECR_REGISTRY }}/e-commerce-app:${{ env.APP_IMAGE_TAG }}
+           kubectl set image k8s/api.yml your-container=${{ env.ECR_REGISTRY }}/e-commerce-api:${{ env.APP_IMAGE_TAG }}
+           kubectl apply -f k8s/app.yml
+           kubectl apply -f k8s/api.yml
+          echo "Deployment logic goes here"
