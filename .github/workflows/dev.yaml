@@ -7,7 +7,7 @@ on:
 env:
   AWS_REGION: us-east-1 # Define your AWS region
   ECR_REGISTRY: 931003996958.dkr.ecr.us-east-1.amazonaws.com # Corrected ECR registry for us-east-1
-  EKS_CLUSTER_NAME: sree # Name of your EKS cluster
+  EKS_CLUSTER_NAME: dev-cp-cluster # Name of your EKS cluster
   DOCKERHUB_REPOSITORY_NAME: kandula17/e-commerce # Your Docker Hub repository name
 
 jobs:
