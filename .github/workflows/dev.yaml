@@ -88,6 +88,6 @@ jobs:
         run: |
            kubectl set image k8s/app.yml your-container=${{ env.ECR_REGISTRY }}/e-commerce-app:${{ env.APP_IMAGE_TAG }}
            kubectl set image k8s/api.yml your-container=${{ env.ECR_REGISTRY }}/e-commerce-api:${{ env.APP_IMAGE_TAG }}
-           kubectl apply -f k8s/app.yml
-           kubectl apply -f k8s/api.yml
+           envsubst < k8s/app.yml | kubectl apply -f -
+           envsubst < k8s/api.yml | kubectl apply -f -
            echo "Deployment logic goes here"
