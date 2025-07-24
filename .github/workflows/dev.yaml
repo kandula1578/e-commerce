@@ -73,6 +73,7 @@ jobs:
       - name: Push Docker Compose service images to ECR. # Pushes built images to ECR
         run: |
           echo "Pushing Docker Compose services to ECR..."
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
           sudo docker-compose push
         env:
           ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
