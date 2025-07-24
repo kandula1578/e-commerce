@@ -55,7 +55,6 @@ jobs:
         run: |
           echo "ECR_REGISTRY=${{ env.ECR_REGISTRY }}" > .env
           echo "APP_IMAGE_TAG=${{ env.APP_IMAGE_TAG }}" >> .env
-          echo "DOCKERHUB_REPOSITORY_NAME=${{ env.DOCKERHUB_REPOSITORY_NAME }}" >> .env
           echo "Generated .env file:"
           cat .env # For debugging purposes, will print content to logs
 
@@ -68,7 +67,6 @@ jobs:
         env:
           ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
           APP_IMAGE_TAG: ${{ env.APP_IMAGE_TAG }}
-          DOCKERHUB_REPOSITORY_NAME: ${{ env.DOCKERHUB_REPOSITORY_NAME }}
 
       - name: Push Docker Compose service images to ECR. # Pushes built images to ECR
         run: |
@@ -78,7 +76,6 @@ jobs:
         env:
           ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
           APP_IMAGE_TAG: ${{ env.APP_IMAGE_TAG }}
-          DOCKERHUB_REPOSITORY_NAME: ${{ env.DOCKERHUB_REPOSITORY_NAME }}
 
       - name: Verify pushed images (optional) # Lists local Docker images for verification
         run: sudo docker images
